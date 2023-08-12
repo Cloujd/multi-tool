@@ -1,3 +1,5 @@
+# Readme
+
 Installing two diffrent ways!
 
 1. git clone https://github.com/Cloujd/multi-tool.git
@@ -9,3 +11,4 @@ Second download method.
 2. Extract zip file
 3. Open controll panel
 4. python run.py
+
